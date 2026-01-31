@@ -1,15 +1,17 @@
 import type { NextConfig } from "next";
-import withPWA from "next-pwa";
+import withPWAInit from "next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+  buildExcludes: [/middleware-manifest\.json$/],
+  importScripts: ["/custom-sw.js"],
+});
 
 const nextConfig: NextConfig = {
   devIndicators: false,
-  ...withPWA({
-    dest: "public",
-    register: true,
-    skipWaiting: true,
-    disable: process.env.NODE_ENV === "development",
-    buildExcludes: [/middleware-manifest\.json$/],
-  }),
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

@@ -1,55 +1,24 @@
+
+// Custom Service Worker logic for Notes App
+// Handles Background Sync, Push Notifications, and API offline fallback
+
 const CACHE_NAME = "notes-app-v2";
-const STATIC_ASSETS = [
-  "/",
-  "/login",
-  "/manifest.json",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
-];
 
-// Install - cache static assets
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
-  self.skipWaiting();
-});
-
-// Activate - clean up old caches
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-// Fetch - network first, fallback to cache
+// Fetch - handle API offline fallback
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests for caching (they go through Background Sync)
-  if (request.method !== "GET") {
-    return;
-  }
-
-  // API calls - network first
-  if (url.pathname.startsWith("/api/")) {
+  // Only handle GET requests to /api/
+  // Non-GET requests are handled by application logic + Background Sync
+  if (request.method === "GET" && url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(request)
         .then((response) => {
           return response;
         })
         .catch(() => {
-          // Return offline response
+          // Return offline response for API calls
           return new Response(
             JSON.stringify({ error: "Offline", offline: true }),
             {
@@ -59,27 +28,8 @@ self.addEventListener("fetch", (event) => {
           );
         })
     );
-    return;
   }
-
-  // Static assets - cache first
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(request).then((response) => {
-        // Cache new static assets
-        if (response.status === 200 && response.type === "basic") {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-        }
-        return response;
-      });
-    })
-  );
+  // For other requests, let Next-PWA / Workbox handle them
 });
 
 // Background Sync - handle queued sync actions

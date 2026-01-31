@@ -10,6 +10,7 @@ const requiredEnvVars = [
   "GOOGLE_CLIENT_SECRET",
   "GITHUB_CLIENT_ID",
   "GITHUB_CLIENT_SECRET",
+  "REDIS_URL",
 ] as const;
 
 const optionalEnvVars = [
@@ -69,6 +70,11 @@ export function getEnvVar(name: string): string | undefined {
  * Automatically detects Vercel deployment or uses local config
  */
 export function getBaseURL(): string {
+  // Custom configured URL
+  if (process.env.NEXT_PUBLIC_AUTH_URL) {
+    return process.env.NEXT_PUBLIC_AUTH_URL;
+  }
+
   // Vercel production URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
@@ -77,11 +83,6 @@ export function getBaseURL(): string {
   // Vercel preview URL
   if (process.env.VERCEL_BRANCH_URL) {
     return `https://${process.env.VERCEL_BRANCH_URL}`;
-  }
-
-  // Custom configured URL
-  if (process.env.NEXT_PUBLIC_AUTH_URL) {
-    return process.env.NEXT_PUBLIC_AUTH_URL;
   }
 
   // Local development fallback

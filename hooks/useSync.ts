@@ -353,12 +353,7 @@ export function useSyncQueue(userId: string | undefined) {
     async (action: SyncAction): Promise<void> => {
       if (!userId) return;
 
-      await db.addToSyncQueue({
-        id: crypto.randomUUID(),
-        action,
-        retryCount: 0,
-        createdAt: Date.now(),
-      });
+      await db.addToSyncQueue(action);
 
       // Trigger background sync if available
       if ("serviceWorker" in navigator && "SyncManager" in window) {

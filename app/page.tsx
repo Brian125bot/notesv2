@@ -145,7 +145,7 @@ export default function Home() {
   }
 
   return (
-    <PullToRefresh onRefresh={sync}>
+    <PullToRefresh onRefresh={async () => { await sync(); }}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16 sm:pb-0">
         <Header
           user={session.user}

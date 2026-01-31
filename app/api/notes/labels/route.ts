@@ -4,7 +4,7 @@ import { labels, noteLabels, notes } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { broadcastNoteUpdated } from "@/app/api/sse/route";
+import { broadcastNoteUpdated } from "@/lib/sse";
 
 /**
  * Note Labels API Routes

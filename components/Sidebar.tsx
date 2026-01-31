@@ -9,9 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface SidebarProps {
   isOpen: boolean;
-  currentView: "notes" | "archive" | "trash" | "labels";
+  currentView: "notes" | "archive" | "labels";
   selectedLabelId: string | null;
-  onViewChange: (view: "notes" | "archive" | "trash") => void;
+  onViewChange: (view: "notes" | "archive") => void;
   onLabelSelect: (labelId: string | null) => void;
   onLabelsChange?: () => void;
 }

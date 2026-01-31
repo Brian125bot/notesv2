@@ -9,7 +9,7 @@ import {
   broadcastNoteUpdated,
   broadcastNoteDeleted,
   broadcastSyncComplete,
-} from "@/app/api/sse/route";
+} from "@/lib/sse";
 
 /**
  * Notes API Routes
