@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
@@ -10,6 +10,11 @@ import {
   broadcastNoteDeleted,
   broadcastSyncComplete,
 } from "@/app/api/sse/route";
+
+/**
+ * Notes API Routes
+ * CRUD operations for notes with real-time broadcasting
+ */
 
 // GET /api/notes - Get all notes for the user
 export async function GET(req: NextRequest) {
@@ -22,6 +27,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const includeArchived = searchParams.get("archived") === "true";
 
+    const db = getDb();
     const userNotes = await db
       .select()
       .from(notes)
@@ -51,6 +57,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { title, content, color, isPinned } = body;
 
+    const db = getDb();
     const [note] = await db
       .insert(notes)
       .values({
@@ -96,6 +103,7 @@ export async function PATCH(req: NextRequest) {
     if (isPinned !== undefined) updateData.isPinned = isPinned;
     if (isArchived !== undefined) updateData.isArchived = isArchived;
 
+    const db = getDb();
     const [note] = await db
       .update(notes)
       .set(updateData)
@@ -132,6 +140,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Note ID required" }, { status: 400 });
     }
 
+    const db = getDb();
     const [note] = await db
       .delete(notes)
       .where(and(eq(notes.id, id), eq(notes.userId, session.user.id)))

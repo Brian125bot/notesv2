@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
-import { sql, eq, and, desc, gt, lt } from "drizzle-orm";
+import { sql, eq, and, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+/**
+ * Full-text Search API
+ * PostgreSQL tsvector-based search with highlighting
+ */
 
 // GET /api/search?q=query&filters=color:yellow,archived:false
 export async function GET(req: NextRequest) {
@@ -35,6 +40,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const db = getDb();
     let results;
 
     if (query.trim()) {

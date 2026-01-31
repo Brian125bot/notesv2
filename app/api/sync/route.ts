@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+/**
+ * Sync API Routes
+ * Bidirectional sync between client and server
+ */
 
 // GET /api/sync?since=timestamp - Get notes updated since timestamp
 export async function GET(req: NextRequest) {
@@ -16,6 +21,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const since = searchParams.get("since");
 
+    const db = getDb();
     let query = db.select().from(notes).where(eq(notes.userId, session.user.id));
 
     if (since) {
@@ -49,6 +55,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { actions } = body;
 
+    const db = getDb();
     const results = [];
 
     for (const action of actions) {

@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { labels, noteLabels, notes } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { broadcastNoteUpdated } from "@/app/api/sse/route";
+
+/**
+ * Note Labels API Routes
+ * Manage labels assigned to specific notes
+ */
 
 // GET /api/notes/labels?noteId=xxx - Get labels for a note
 export async function GET(req: NextRequest) {
@@ -20,6 +25,8 @@ export async function GET(req: NextRequest) {
     if (!noteId) {
       return NextResponse.json({ error: "Note ID required" }, { status: 400 });
     }
+
+    const db = getDb();
 
     // Verify note belongs to user
     const [note] = await db
@@ -64,6 +71,8 @@ export async function POST(req: NextRequest) {
     if (!noteId || !Array.isArray(labelIds)) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
+
+    const db = getDb();
 
     // Verify note belongs to user
     const [note] = await db
@@ -117,6 +126,8 @@ export async function DELETE(req: NextRequest) {
     if (!noteId || !labelId) {
       return NextResponse.json({ error: "Note ID and Label ID required" }, { status: 400 });
     }
+
+    const db = getDb();
 
     // Verify note belongs to user
     const [note] = await db

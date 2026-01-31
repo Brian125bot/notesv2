@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
 import { sql, eq, and, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+/**
+ * Search Suggestions API
+ * Returns autocomplete suggestions based on note titles
+ */
 
 // GET /api/search/suggestions?q=par
 export async function GET(req: NextRequest) {
@@ -21,6 +26,7 @@ export async function GET(req: NextRequest) {
     }
 
     const searchPattern = `%${query.toLowerCase()}%`;
+    const db = getDb();
 
     // Get suggestions from recent notes
     const titleMatches = await db

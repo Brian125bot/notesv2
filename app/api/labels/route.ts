@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { labels, noteLabels, notes } from "@/db/schema";
+import { getDb } from "@/lib/db";
+import { labels, noteLabels } from "@/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { broadcastNoteUpdated } from "@/app/api/sse/route";
+
+/**
+ * Labels API Routes
+ * CRUD operations for note labels
+ */
 
 // GET /api/labels - Get all labels for user
 export async function GET(req: NextRequest) {
@@ -13,6 +17,8 @@ export async function GET(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const db = getDb();
 
     // Get labels with note counts
     const userLabels = await db
@@ -55,6 +61,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }
 
+    const db = getDb();
     const [label] = await db
       .insert(labels)
       .values({
@@ -98,6 +105,7 @@ export async function PATCH(req: NextRequest) {
     if (body.description !== undefined) updateData.description = body.description;
     if (body.sortOrder !== undefined) updateData.sortOrder = body.sortOrder;
 
+    const db = getDb();
     const [label] = await db
       .update(labels)
       .set(updateData)
@@ -129,6 +137,8 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "Label ID required" }, { status: 400 });
     }
+
+    const db = getDb();
 
     // Delete label (junction records will cascade)
     const [label] = await db
