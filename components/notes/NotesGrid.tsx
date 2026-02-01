@@ -3,17 +3,10 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { NoteCard } from "./NoteCard";
 import { NoteEditor } from "./NoteEditor";
-import type { Note, NoteColor } from "@/types";
-
-interface Label {
-  id: string;
-  name: string;
-  color: string;
-  emoji: string;
-}
+import type { Note, NoteColor, Label } from "@/types";
 
 interface NotesGridProps {
-  notes: (Note & { labels?: Label[] })[];
+  notes: Note[];
   showArchived?: boolean;
   onUpdate: (id: string, data: Partial<Note>) => void;
   onArchive: (id: string, isArchived: boolean) => void;

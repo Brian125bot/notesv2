@@ -43,6 +43,7 @@ export function useSync({
     pendingCount: 0,
     error: null,
   });
+  const [isOnline, setIsOnline] = useState(true);
 
   const isSyncingRef = useRef(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -102,7 +103,7 @@ export function useSync({
         retryAttemptsRef.current.set(item.id, newAttempts);
 
         // If it's a network error, we'll retry
-        if (!navigator.onLine) {
+        if (typeof window !== "undefined" && !navigator.onLine) {
           console.log("Offline, will retry later");
           return false;
         }
@@ -307,13 +308,26 @@ export function useSync({
 
   // Listen for online event
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
+    }
+    
     const handleOnline = () => {
       console.log("Back online, triggering sync...");
+      setIsOnline(true);
       performSync();
     };
 
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
     window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, [performSync]);
 
   // Listen for service worker sync messages
@@ -341,7 +355,7 @@ export function useSync({
     ...syncState,
     sync,
     retryFailed,
-    isOnline: navigator.onLine,
+    isOnline,
   };
 }
 
@@ -353,15 +367,10 @@ export function useSyncQueue(userId: string | undefined) {
     async (action: SyncAction): Promise<void> => {
       if (!userId) return;
 
-      await db.addToSyncQueue({
-        id: crypto.randomUUID(),
-        action,
-        retryCount: 0,
-        createdAt: Date.now(),
-      });
+      await db.addToSyncQueue(action);
 
       // Trigger background sync if available
-      if ("serviceWorker" in navigator && "SyncManager" in window) {
+      if (typeof window !== "undefined" && "serviceWorker" in navigator && "SyncManager" in window) {
         try {
           const registration = await navigator.serviceWorker.ready;
           await (registration as any).sync.register("sync-notes");

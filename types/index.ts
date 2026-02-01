@@ -32,6 +32,9 @@ export interface Label {
   userId: string;
   name: string;
   color: NoteColor;
+  emoji: string;
+  description?: string | null;
+  sortOrder: number;
   createdAt: string;
 }
 

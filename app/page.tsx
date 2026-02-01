@@ -98,7 +98,7 @@ export default function Home() {
 
   // Register service worker
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
         .then((registration) => {
@@ -144,8 +144,12 @@ export default function Home() {
     );
   }
 
+  const handleRefresh = useCallback(async () => {
+    await sync();
+  }, [sync]);
+
   return (
-    <PullToRefresh onRefresh={sync}>
+    <PullToRefresh onRefresh={handleRefresh}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16 sm:pb-0">
         <Header
           user={session.user}

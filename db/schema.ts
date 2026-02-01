@@ -1,4 +1,10 @@
-import { pgTable, uuid, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, integer, customType, index } from "drizzle-orm/pg-core";
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 export const notes = pgTable("notes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -8,9 +14,12 @@ export const notes = pgTable("notes", {
   color: text("color").notNull().default("white"),
   isPinned: boolean("is_pinned").notNull().default(false),
   isArchived: boolean("is_archived").notNull().default(false),
+  searchVector: tsvector("search_vector"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  searchIndex: index("idx_notes_search").using("gin", table.searchVector),
+}));
 
 export const labels = pgTable("labels", {
   id: uuid("id").primaryKey().defaultRandom(),

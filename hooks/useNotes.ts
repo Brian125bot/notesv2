@@ -40,7 +40,10 @@ export function useNotes(userId: string | undefined) {
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    setIsOnline(navigator.onLine);
+    
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
+    }
 
     return () => {
       window.removeEventListener("online", handleOnline);

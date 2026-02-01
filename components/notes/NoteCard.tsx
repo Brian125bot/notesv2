@@ -12,18 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NoteSyncIndicator } from "@/components/SyncStatus";
 import { LabelChip } from "@/components/labels/LabelChip";
-import type { Note, NoteColor } from "@/types";
+import type { Note, NoteColor, Label } from "@/types";
 import { NOTE_COLORS } from "@/types";
 
-interface Label {
-  id: string;
-  name: string;
-  color: string;
-  emoji: string;
-}
-
 interface NoteCardProps {
-  note: Note & { labels?: Label[] };
+  note: Note;
   onEdit: (note: Note) => void;
   onArchive: (id: string, isArchived: boolean) => void;
   onPin: (id: string, isPinned: boolean) => void;
