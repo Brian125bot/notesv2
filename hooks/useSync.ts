@@ -146,8 +146,8 @@ export function useSync({
         }
 
         // Remove successfully processed items from queue
-        for (const id of processedItems) {
-          await db.removeFromSyncQueue(id);
+        if (processedItems.length > 0) {
+          await db.removeManyFromSyncQueue(processedItems);
         }
 
         // Show toast for partial failures
