@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const filters = searchParams.get("filters");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    let whereConditions = [];
+    const whereConditions = [];
 
     // Parse and apply filters
     if (filters) {
@@ -78,13 +78,29 @@ export async function GET(req: NextRequest) {
     }
 
     // Highlight matching text
+    let highlightRegex: RegExp | null = null;
+    if (query.trim()) {
+      const terms = query
+        .toLowerCase()
+        .replace(/[^a-zA-Z0-9\s]/g, "")
+        .split(/\s+/)
+        .filter(Boolean);
+
+      if (terms.length > 0) {
+        // Sort by length desc to ensure longest match wins
+        terms.sort((a, b) => b.length - a.length);
+        const pattern = terms.map(escapeRegex).join("|");
+        highlightRegex = new RegExp(`(${pattern})`, "gi");
+      }
+    }
+
     const highlightedResults = searchResults.map((note) => ({
       ...note,
-      titleHighlighted: query.trim()
-        ? highlightMatches(note.title, query)
+      titleHighlighted: highlightRegex
+        ? highlightMatches(note.title, highlightRegex)
         : note.title,
-      contentHighlighted: query.trim()
-        ? highlightMatches(note.content, query)
+      contentHighlighted: highlightRegex
+        ? highlightMatches(note.content, highlightRegex)
         : note.content,
     }));
 
@@ -100,22 +116,8 @@ export async function GET(req: NextRequest) {
 }
 
 // Highlight matching text with <mark> tags
-function highlightMatches(text: string, query: string): string {
-  if (!query.trim()) return text;
-
-  const terms = query
-    .toLowerCase()
-    .replace(/[^a-zA-Z0-9\s]/g, "")
-    .split(/\s+/)
-    .filter(Boolean);
-
-  let highlighted = text;
-  for (const term of terms) {
-    const regex = new RegExp(`(${escapeRegex(term)})`, "gi");
-    highlighted = highlighted.replace(regex, "<mark>$1</mark>");
-  }
-
-  return highlighted;
+function highlightMatches(text: string, regex: RegExp): string {
+  return text.replace(regex, "<mark>$1</mark>");
 }
 
 function escapeRegex(str: string): string {
