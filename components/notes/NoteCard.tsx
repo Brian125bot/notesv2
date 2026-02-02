@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Pin, Archive, Trash2, Palette } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,14 +36,11 @@ export function NoteCard({
   onDelete,
   onColorChange,
 }: NoteCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const colors = NOTE_COLORS[note.color] || NOTE_COLORS.white;
 
   return (
     <Card
       className={`group relative cursor-pointer transition-all duration-200 hover:shadow-lg ${colors.bg} ${colors.border} border dark:bg-opacity-90`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       onClick={() => onEdit(note)}
     >
       <CardContent className="p-4 relative">
@@ -56,7 +52,7 @@ export function NoteCard({
           variant="ghost"
           size="icon"
           className={`absolute top-2 right-2 h-8 w-8 transition-opacity ${
-            note.isPinned || isHovered ? "opacity-100" : "opacity-0"
+            note.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"
           } ${note.isPinned ? "text-amber-500" : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"}`}
           onClick={(e) => {
             e.stopPropagation();
@@ -103,9 +99,7 @@ export function NoteCard({
 
         {/* Footer actions */}
         <div
-          className={`flex items-center gap-1 mt-4 transition-opacity ${
-            isHovered ? "opacity-100" : "opacity-0"
-          }`}
+          className="flex items-center gap-1 mt-4 transition-opacity opacity-0 group-hover:opacity-100 focus-within:opacity-100"
         >
           {/* Color picker */}
           <DropdownMenu>
