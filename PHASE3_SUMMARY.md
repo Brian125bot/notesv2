@@ -220,7 +220,6 @@ npm run dev
 Open http://localhost:3000 and try:
 1. **Search**: Click search icon, type a query
 2. **Labels**: Create a label, add to note, filter by label
-3. **Dark Mode**: Toggle in user menu
 4. **Mobile**: Open dev tools, switch to mobile view, try pull-to-refresh
 
 ---

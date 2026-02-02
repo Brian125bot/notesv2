@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
-import { sql, eq, and, desc } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { sql, desc, and } from "drizzle-orm";
 
 /**
  * Search Suggestions API
@@ -13,11 +11,6 @@ import { headers } from "next/headers";
 // GET /api/search/suggestions?q=par
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q") || "";
 
@@ -36,7 +29,6 @@ export async function GET(req: NextRequest) {
       .from(notes)
       .where(
         and(
-          eq(notes.userId, session.user.id),
           sql`LOWER(title) LIKE ${searchPattern}`,
           sql`LENGTH(title) > 0`
         )

@@ -13,11 +13,9 @@ import {
 import { SyncStatus } from "./SyncStatus";
 import { ThemeToggle } from "./ThemeToggle";
 import { SearchBar } from "./search/SearchBar";
-import type { User as UserType } from "better-auth";
 import type { Note } from "@/types";
 
 interface HeaderProps {
-  user?: UserType | null;
   isOnline: boolean;
   isSyncing: boolean;
   pendingCount: number;
@@ -26,12 +24,10 @@ interface HeaderProps {
   onMenuClick: () => void;
   onRefresh: () => void;
   onRetrySync?: () => void;
-  onLogout: () => void;
   onNoteSelect: (note: Note) => void;
 }
 
 export function Header({
-  user,
   isOnline,
   isSyncing,
   pendingCount,
@@ -40,7 +36,6 @@ export function Header({
   onMenuClick,
   onRefresh,
   onRetrySync,
-  onLogout,
   onNoteSelect,
 }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false);
@@ -121,36 +116,6 @@ export function Header({
 
             {/* Theme Toggle */}
             <ThemeToggle />
-
-            {/* User menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                >
-                  {user?.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.name || "User"}
-                      className="h-8 w-8 rounded-full"
-                    />
-                  ) : (
-                    <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem className="flex flex-col items-start">
-                  <span className="font-medium">{user?.name || "Guest"}</span>
-                  <span className="text-sm text-gray-500">{user?.email}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onLogout} className="text-red-600">
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </header>

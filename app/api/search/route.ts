@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
 import { sql, eq, and, desc } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
 /**
  * Full-text Search API
@@ -13,17 +11,12 @@ import { headers } from "next/headers";
 // GET /api/search?q=query&filters=color:yellow,archived:false
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q") || "";
     const filters = searchParams.get("filters");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    let whereConditions = [eq(notes.userId, session.user.id)];
+    let whereConditions = [];
 
     // Parse and apply filters
     if (filters) {
@@ -41,8 +34,8 @@ export async function GET(req: NextRequest) {
     }
 
     const db = getDb();
-    let results;
 
+    let searchResults;
     if (query.trim()) {
       // Full-text search with ranking
       const searchQuery = query
@@ -51,10 +44,9 @@ export async function GET(req: NextRequest) {
         .filter(Boolean)
         .join(" & ");
 
-      results = await db
+      searchResults = await db
         .select({
           id: notes.id,
-          userId: notes.userId,
           title: notes.title,
           content: notes.content,
           color: notes.color,
@@ -77,16 +69,16 @@ export async function GET(req: NextRequest) {
         .limit(limit);
     } else {
       // No query, just filters - return recent notes
-      results = await db
+      searchResults = await db
         .select()
         .from(notes)
-        .where(and(...whereConditions))
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .orderBy(desc(notes.updatedAt))
         .limit(limit);
     }
 
     // Highlight matching text
-    const highlightedResults = results.map((note) => ({
+    const highlightedResults = searchResults.map((note) => ({
       ...note,
       titleHighlighted: query.trim()
         ? highlightMatches(note.title, query)

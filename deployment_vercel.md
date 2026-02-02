@@ -54,38 +54,21 @@ Go to the **"Environment Variables"** section in the Vercel project setup and ad
 | Variable Name | Description | Example Value |
 | :--- | :--- | :--- |
 | `DATABASE_URL` | Neon Production Connection String | `postgres://user:pass@...` |
-| `BETTER_AUTH_SECRET` | 32+ char random string for session encryption | `openssl rand -base64 32` |
-| `BETTER_AUTH_BASE_URL` | The production URL of your app | `https://your-app.vercel.app` |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | `...` |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | `...` |
-| `GITHUB_CLIENT_ID` | GitHub OAuth Client ID | `...` |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth Client Secret | `...` |
-
-> **Note on `BETTER_AUTH_BASE_URL`:** During the initial setup, you might not know the exact Vercel URL. You can deploy once, get the URL, update this variable, and redeploy. Alternatively, configure a custom domain first.
 
 ## 5. Deployment
 
 1.  Click **"Deploy"**.
 2.  Vercel will install dependencies, build the Next.js app, and deploy functions.
-3.  **Build Verification:** Watch the logs. Ensure `Compiled successfully` appears and no critical warnings regarding `proxy.ts` or type errors occur.
+3.  **Build Verification:** Watch the logs. Ensure `Compiled successfully` appears.
 
 ## 6. Post-Deployment Configuration
 
 Once the deployment is live (e.g., `https://notes-app-xyz.vercel.app`):
 
-### 6.1 Update OAuth Callbacks
-You must whitelist the new production callback URLs in your OAuth providers.
-
--   **Google Cloud Console:**
-    -   Add URI: `https://notes-app-xyz.vercel.app/api/auth/callback/google`
--   **GitHub Developer Settings:**
-    -   Authorization Callback URL: `https://notes-app-xyz.vercel.app/api/auth/callback/github`
-
-### 6.2 Verify Features
-1.  **Auth:** Try logging in with both providers.
-2.  **Sync:** Create a note. Refresh the page. Ensure it persists.
-3.  **Search:** Try the search bar. This verifies the `tsvector` column and GIN index are working on the production DB.
-4.  **Offline:** Turn off network (in DevTools), create a note, turn network back on. Verify it syncs.
+### 6.1 Verify Features
+1.  **Sync:** Create a note. Refresh the page. Ensure it persists.
+2.  **Search:** Try the search bar. This verifies the `tsvector` column and GIN index are working on the production DB.
+3.  **Offline:** Turn off network (in DevTools), create a note, turn network back on. Verify it syncs.
 
 ## 7. Performance & Optimization Tips
 

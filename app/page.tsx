@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useSession, signOut } from "@/lib/auth-client";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { CreateNote } from "@/components/notes/CreateNote";
@@ -18,13 +17,10 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Note, NoteColor } from "@/types";
 
 export default function Home() {
-  const { data: session, isPending } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<"notes" | "archive" | "labels">("notes");
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-  const userId = session?.user?.id;
 
   const {
     notes,
@@ -36,7 +32,7 @@ export default function Home() {
     archiveNote,
     pinNote,
     refresh,
-  } = useNotes(userId);
+  } = useNotes();
 
   // Sync state management
   const handleSyncComplete = useCallback(() => {
@@ -51,7 +47,6 @@ export default function Home() {
     sync,
     retryFailed,
   } = useSync({
-    userId,
     onSyncComplete: handleSyncComplete,
   });
 
@@ -61,7 +56,6 @@ export default function Home() {
   const handleServerNoteDeleted = useCallback(() => refresh(), [refresh]);
 
   const { isConnected: isSSEConnected } = useSSE({
-    userId,
     onNoteCreated: handleServerNoteCreated,
     onNoteUpdated: handleServerNoteUpdated,
     onNoteDeleted: handleServerNoteDeleted,
@@ -127,23 +121,6 @@ export default function Home() {
     }
   }, []);
 
-  // Redirect to login if not authenticated
-  if (!isPending && !session) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
-    return null;
-  }
-
-  // Show loading state
-  if (isPending || !session) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-      </div>
-    );
-  }
-
   const handleRefresh = useCallback(async () => {
     await sync();
   }, [sync]);
@@ -152,7 +129,6 @@ export default function Home() {
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16 sm:pb-0">
         <Header
-          user={session.user}
           isOnline={isOnline}
           isSyncing={isSyncing}
           pendingCount={pendingCount}
@@ -161,7 +137,6 @@ export default function Home() {
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           onRefresh={sync}
           onRetrySync={retryFailed}
-          onLogout={signOut}
           onNoteSelect={handleNoteSelect}
         />
 

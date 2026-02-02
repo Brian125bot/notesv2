@@ -11,10 +11,9 @@ Complete setup instructions for running the Notes App locally and deploying to p
 3. [Detailed Setup](#detailed-setup)
 4. [Environment Configuration](#environment-configuration)
 5. [Database Setup](#database-setup)
-6. [Authentication Setup](#authentication-setup)
-7. [Running the App](#running-the-app)
-8. [Deployment](#deployment)
-9. [Troubleshooting](#troubleshooting)
+6. [Running the App](#running-the-app)
+7. [Deployment](#deployment)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -32,8 +31,7 @@ Complete setup instructions for running the Notes App locally and deploying to p
 ### Required Accounts
 
 1. **Neon** (https://neon.tech) - Serverless PostgreSQL
-2. **GitHub** or **Google Account** - For OAuth authentication
-3. **Netlify** or **Vercel** (optional) - For deployment
+2. **Netlify** or **Vercel** (optional) - For deployment
 
 ---
 
@@ -53,9 +51,8 @@ npm install
 cp .env.example .env.local
 
 # 4. Set up Neon database (see Database Setup section)
-# 5. Configure OAuth (see Authentication Setup section)
 
-# 6. Run the app
+# 5. Run the app
 npm run dev
 ```
 
@@ -82,7 +79,6 @@ This installs:
 - Next.js 14 with App Router
 - React and TypeScript
 - Drizzle ORM
-- Better Auth
 - Tailwind CSS + shadcn/ui
 - Dexie.js for IndexedDB
 - And all other dependencies
@@ -107,29 +103,9 @@ Edit `.env.local` with your values (see [Environment Variables](#environment-con
 # Database (from Neon Console)
 DATABASE_URL=postgresql://user:password@host.neon.tech/database?sslmode=require
 
-# Better Auth Secret (generate with: openssl rand -base64 32)
-BETTER_AUTH_SECRET=your_secret_here
-
-# Public URL
+# Public URL (optional for Vercel)
 NEXT_PUBLIC_AUTH_URL=http://localhost:3000
-
-# OAuth - Google (from Google Cloud Console)
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# OAuth - GitHub (from GitHub Developer Settings)
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
 ```
-
-### Generating Secrets
-
-**Better Auth Secret:**
-```bash
-openssl rand -base64 32
-```
-
-Copy the output and set as `BETTER_AUTH_SECRET`.
 
 ---
 
@@ -174,10 +150,9 @@ DATABASE_URL=postgresql://localhost:5432/notes_app
 ### Database Schema
 
 The app uses these tables:
-- `notes` - User notes with content, color, pin status
+- `notes` - Notes with content, color, pin status
 - `labels` - Note labels/tags
 - `note_labels` - Many-to-many relationship
-- `neon_auth` - Managed by Better Auth
 
 ### Verifying Database Connection
 
@@ -187,51 +162,6 @@ npx drizzle-kit studio
 ```
 
 This opens Drizzle Studio at http://localhost:4983 for database management.
-
----
-
-## Authentication Setup
-
-### Google OAuth
-
-1. **Go to Google Cloud Console:**
-   - https://console.cloud.google.com
-
-2. **Create a new project** (or use existing)
-
-3. **Enable Google+ API:**
-   - APIs & Services → Library
-   - Search "Google+ API"
-   - Click Enable
-
-4. **Create OAuth Credentials:**
-   - APIs & Services → Credentials
-   - Click "Create Credentials" → "OAuth client ID"
-   - Application type: Web application
-   - Name: Notes App
-   - Authorized redirect URIs:
-     - `http://localhost:3000/api/auth/callback/google` (development)
-     - `https://yourdomain.com/api/auth/callback/google` (production)
-
-5. **Copy credentials:**
-   - Client ID → `GOOGLE_CLIENT_ID`
-   - Client Secret → `GOOGLE_CLIENT_SECRET`
-
-### GitHub OAuth
-
-1. **Go to GitHub Settings:**
-   - https://github.com/settings/developers
-
-2. **Create a new OAuth App:**
-   - Click "New OAuth App"
-   - Application name: Notes App
-   - Homepage URL: `http://localhost:3000`
-   - Authorization callback URL:
-     - `http://localhost:3000/api/auth/callback/github` (development)
-
-3. **Copy credentials:**
-   - Client ID → `GITHUB_CLIENT_ID`
-   - Generate Client Secret → `GITHUB_CLIENT_SECRET`
 
 ---
 
@@ -290,12 +220,7 @@ git push origin main
 
 4. **Set environment variables:**
    - Go to Site settings → Environment variables
-   - Add all variables from `.env.local`
-   - Update `NEXT_PUBLIC_AUTH_URL` to your production URL
-
-5. **Update OAuth redirect URIs:**
-   - Add `https://your-site.netlify.app/api/auth/callback/google`
-   - Add `https://your-site.netlify.app/api/auth/callback/github`
+   - Add `DATABASE_URL` and any others from `.env.local`
 
 ### Option 2: Vercel
 
@@ -333,7 +258,6 @@ pm2 start npm --name "notes-app" -- start
 ### Essential Checks
 
 - [ ] App loads without errors
-- [ ] OAuth login works (Google & GitHub)
 - [ ] Notes can be created/edited/deleted
 - [ ] Sync works across devices
 - [ ] Offline mode works (test in DevTools)
@@ -382,13 +306,6 @@ postgresql://user:pass@host.neon.tech/db?sslmode=require
 # Test connection
 psql "$DATABASE_URL" -c "SELECT 1"
 ```
-
-#### Issue: "OAuth callback error"
-
-**Solution:**
-- Check redirect URIs match exactly (including protocol)
-- Ensure `NEXT_PUBLIC_AUTH_URL` matches your domain
-- Verify client ID and secret are correct
 
 #### Issue: "Service Worker not registering"
 
@@ -474,7 +391,6 @@ npm run format
 notesv2/
 ├── app/                    # Next.js app router
 │   ├── api/               # API routes
-│   ├── login/             # Login page
 │   ├── globals.css        # Global styles
 │   ├── layout.tsx         # Root layout
 │   ├── manifest.ts        # PWA manifest
@@ -488,7 +404,6 @@ notesv2/
 ├── db/                    # Database schema
 ├── hooks/                 # Custom React hooks
 ├── lib/                   # Utilities
-│   ├── auth.ts           # Auth configuration
 │   ├── db.ts             # Database connection
 │   ├── indexeddb.ts      # Offline storage
 │   └── ...
@@ -510,10 +425,9 @@ After setup, explore these features:
 1. **Create your first note**
 2. **Try offline mode** (disconnect internet)
 3. **Test on mobile** (responsive design)
-4. **Enable dark mode** (user menu)
+4. **Enable dark mode** (theme toggle)
 5. **Create labels** to organize notes
 6. **Search** your notes
-7. **Share** notes with others
 
 ---
 

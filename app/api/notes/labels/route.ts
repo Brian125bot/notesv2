@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { labels, noteLabels, notes } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { broadcastNoteUpdated } from "@/app/api/sse/route";
 
 /**
@@ -14,11 +12,6 @@ import { broadcastNoteUpdated } from "@/app/api/sse/route";
 // GET /api/notes/labels?noteId=xxx - Get labels for a note
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const noteId = searchParams.get("noteId");
 
@@ -28,11 +21,11 @@ export async function GET(req: NextRequest) {
 
     const db = getDb();
 
-    // Verify note belongs to user
+    // Verify note exists
     const [note] = await db
       .select()
       .from(notes)
-      .where(and(eq(notes.id, noteId), eq(notes.userId, session.user.id)));
+      .where(eq(notes.id, noteId));
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
@@ -60,11 +53,6 @@ export async function GET(req: NextRequest) {
 // POST /api/notes/labels - Add labels to note
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { noteId, labelIds } = body;
 
@@ -74,23 +62,23 @@ export async function POST(req: NextRequest) {
 
     const db = getDb();
 
-    // Verify note belongs to user
+    // Verify note exists
     const [note] = await db
       .select()
       .from(notes)
-      .where(and(eq(notes.id, noteId), eq(notes.userId, session.user.id)));
+      .where(eq(notes.id, noteId));
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
     }
 
-    // Verify labels belong to user
-    const userLabels = await db
+    // Get valid labels
+    const selectedLabels = await db
       .select({ id: labels.id })
       .from(labels)
-      .where(and(eq(labels.userId, session.user.id), inArray(labels.id, labelIds)));
+      .where(inArray(labels.id, labelIds));
 
-    const validLabelIds = userLabels.map((l) => l.id);
+    const validLabelIds = selectedLabels.map((l) => l.id);
 
     // Insert junction records (ignore duplicates)
     for (const labelId of validLabelIds) {
@@ -102,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Broadcast update
-    broadcastNoteUpdated(session.user.id, { ...note, updatedAt: new Date().toISOString() });
+    broadcastNoteUpdated("guest", { ...note, updatedAt: new Date().toISOString() });
 
     return NextResponse.json({ success: true, added: validLabelIds.length });
   } catch (error) {
@@ -114,11 +102,6 @@ export async function POST(req: NextRequest) {
 // DELETE /api/notes/labels?noteId=xxx&labelId=xxx - Remove label from note
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const noteId = searchParams.get("noteId");
     const labelId = searchParams.get("labelId");
@@ -129,11 +112,11 @@ export async function DELETE(req: NextRequest) {
 
     const db = getDb();
 
-    // Verify note belongs to user
+    // Verify note exists
     const [note] = await db
       .select()
       .from(notes)
-      .where(and(eq(notes.id, noteId), eq(notes.userId, session.user.id)));
+      .where(eq(notes.id, noteId));
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
@@ -145,7 +128,7 @@ export async function DELETE(req: NextRequest) {
       .where(and(eq(noteLabels.noteId, noteId), eq(noteLabels.labelId, labelId)));
 
     // Broadcast update
-    broadcastNoteUpdated(session.user.id, { ...note, updatedAt: new Date().toISOString() });
+    broadcastNoteUpdated("guest", { ...note, updatedAt: new Date().toISOString() });
 
     return NextResponse.json({ success: true });
   } catch (error) {

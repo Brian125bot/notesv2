@@ -8,6 +8,13 @@
       "when": 1769924382315,
       "tag": "0000_bored_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769984351226,
+      "tag": "0001_watery_tarot",
+      "breakpoints": true
     }
   ]
 }

@@ -5,15 +5,9 @@
 
 const requiredEnvVars = [
   "DATABASE_URL",
-  "BETTER_AUTH_SECRET",
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_CLIENT_SECRET",
-  "GITHUB_CLIENT_ID",
-  "GITHUB_CLIENT_SECRET",
 ] as const;
 
 const optionalEnvVars = [
-  "NEXT_PUBLIC_AUTH_URL",
   "NODE_ENV",
   "VERCEL_URL",
 ] as const;
@@ -77,11 +71,6 @@ export function getBaseURL(): string {
   // Vercel preview URL
   if (process.env.VERCEL_BRANCH_URL) {
     return `https://${process.env.VERCEL_BRANCH_URL}`;
-  }
-
-  // Custom configured URL
-  if (process.env.NEXT_PUBLIC_AUTH_URL) {
-    return process.env.NEXT_PUBLIC_AUTH_URL;
   }
 
   // Local development fallback

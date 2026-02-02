@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
-import { eq, and, gt } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { eq, gt } from "drizzle-orm";
 
 /**
  * Sync API Routes
@@ -13,26 +11,14 @@ import { headers } from "next/headers";
 // GET /api/sync?since=timestamp - Get notes updated since timestamp
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const since = searchParams.get("since");
 
     const db = getDb();
-    let query = db.select().from(notes).where(eq(notes.userId, session.user.id));
-
-    if (since) {
-      const sinceDate = new Date(parseInt(since));
-      query = db
-        .select()
-        .from(notes)
-        .where(and(eq(notes.userId, session.user.id), gt(notes.updatedAt, sinceDate)));
-    }
-
-    const userNotes = await query;
+    
+    const userNotes = await (since 
+      ? db.select().from(notes).where(gt(notes.updatedAt, new Date(parseInt(since))))
+      : db.select().from(notes));
 
     return NextResponse.json({
       notes: userNotes,
@@ -47,11 +33,6 @@ export async function GET(req: NextRequest) {
 // POST /api/sync - Apply batch changes from client
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { actions } = body;
 
@@ -66,7 +47,6 @@ export async function POST(req: NextRequest) {
               .insert(notes)
               .values({
                 ...action.note,
-                userId: session.user.id,
               })
               .returning();
             results.push({ type: "create", success: true, note });
@@ -77,7 +57,7 @@ export async function POST(req: NextRequest) {
             const [note] = await db
               .update(notes)
               .set(action.note)
-              .where(and(eq(notes.id, action.note.id), eq(notes.userId, session.user.id)))
+              .where(eq(notes.id, action.note.id))
               .returning();
             results.push({ type: "update", success: !!note, note });
             break;
@@ -86,7 +66,7 @@ export async function POST(req: NextRequest) {
           case "delete": {
             const [note] = await db
               .delete(notes)
-              .where(and(eq(notes.id, action.noteId), eq(notes.userId, session.user.id)))
+              .where(eq(notes.id, action.noteId))
               .returning();
             results.push({ type: "delete", success: !!note, noteId: action.noteId });
             break;
@@ -96,7 +76,7 @@ export async function POST(req: NextRequest) {
             const [note] = await db
               .update(notes)
               .set({ isArchived: action.isArchived })
-              .where(and(eq(notes.id, action.noteId), eq(notes.userId, session.user.id)))
+              .where(eq(notes.id, action.noteId))
               .returning();
             results.push({ type: "archive", success: !!note, note });
             break;
@@ -106,7 +86,7 @@ export async function POST(req: NextRequest) {
             const [note] = await db
               .update(notes)
               .set({ isPinned: action.isPinned })
-              .where(and(eq(notes.id, action.noteId), eq(notes.userId, session.user.id)))
+              .where(eq(notes.id, action.noteId))
               .returning();
             results.push({ type: "pin", success: !!note, note });
             break;

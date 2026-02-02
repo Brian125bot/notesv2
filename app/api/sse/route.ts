@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
-// Map of userId to their active connections
+// Map of clientId to their active connections
 const connections = new Map<string, Set<ReadableStreamDefaultController>>();
 
 // Heartbeat interval (30 seconds)
@@ -14,26 +12,20 @@ const HEARTBEAT_INTERVAL = 30000;
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verify authentication
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-
-    const userId = session.user.id;
+    const clientId = "guest";
 
     // Create SSE stream
     const stream = new ReadableStream({
       start(controller) {
-        // Add this connection to user's connections
-        if (!connections.has(userId)) {
-          connections.set(userId, new Set());
+        // Add this connection to global connections
+        if (!connections.has(clientId)) {
+          connections.set(clientId, new Set());
         }
-        connections.get(userId)!.add(controller);
+        connections.get(clientId)!.add(controller);
 
         // Send initial connection message
         const message = formatSSEMessage("connected", {
-          userId,
+          clientId,
           timestamp: Date.now(),
         });
         controller.enqueue(message);
@@ -45,18 +37,18 @@ export async function GET(req: NextRequest) {
           } catch {
             // Connection closed, clean up
             clearInterval(heartbeat);
-            cleanupConnection(userId, controller);
+            cleanupConnection(clientId, controller);
           }
         }, HEARTBEAT_INTERVAL);
 
         // Handle client disconnect
         req.signal.addEventListener("abort", () => {
           clearInterval(heartbeat);
-          cleanupConnection(userId, controller);
+          cleanupConnection(clientId, controller);
         });
       },
       cancel(controller) {
-        cleanupConnection(userId, controller);
+        cleanupConnection(clientId, controller);
       },
     });
 
@@ -85,27 +77,27 @@ function formatSSEMessage(event: string, data: unknown): Uint8Array {
  * Clean up a closed connection
  */
 function cleanupConnection(
-  userId: string,
+  clientId: string,
   controller: ReadableStreamDefaultController
 ) {
-  const userConnections = connections.get(userId);
+  const userConnections = connections.get(clientId);
   if (userConnections) {
     userConnections.delete(controller);
     if (userConnections.size === 0) {
-      connections.delete(userId);
+      connections.delete(clientId);
     }
   }
 }
 
 /**
- * Broadcast an event to all connections for a user
+ * Broadcast an event to all connections for a client group
  */
-export function broadcastToUser(
-  userId: string,
+export function broadcastToClient(
+  clientId: string,
   event: string,
   data: unknown
 ) {
-  const userConnections = connections.get(userId);
+  const userConnections = connections.get(clientId);
   if (!userConnections || userConnections.size === 0) return;
 
   const message = formatSSEMessage(event, data);
@@ -122,34 +114,34 @@ export function broadcastToUser(
 
   // Clean up dead connections
   for (const controller of deadConnections) {
-    cleanupConnection(userId, controller);
+    cleanupConnection(clientId, controller);
   }
 }
 
 /**
  * Broadcast a note creation event
  */
-export function broadcastNoteCreated(userId: string, note: unknown) {
-  broadcastToUser(userId, "note_created", { note });
+export function broadcastNoteCreated(clientId: string, note: unknown) {
+  broadcastToClient(clientId, "note_created", { note });
 }
 
 /**
  * Broadcast a note update event
  */
-export function broadcastNoteUpdated(userId: string, note: unknown) {
-  broadcastToUser(userId, "note_updated", { note });
+export function broadcastNoteUpdated(clientId: string, note: unknown) {
+  broadcastToClient(clientId, "note_updated", { note });
 }
 
 /**
  * Broadcast a note deletion event
  */
-export function broadcastNoteDeleted(userId: string, noteId: string) {
-  broadcastToUser(userId, "note_deleted", { noteId });
+export function broadcastNoteDeleted(clientId: string, noteId: string) {
+  broadcastToClient(clientId, "note_deleted", { noteId });
 }
 
 /**
  * Broadcast a sync completion event
  */
-export function broadcastSyncComplete(userId: string, timestamp: number) {
-  broadcastToUser(userId, "sync_complete", { timestamp });
+export function broadcastSyncComplete(clientId: string, timestamp: number) {
+  broadcastToClient(clientId, "sync_complete", { timestamp });
 }

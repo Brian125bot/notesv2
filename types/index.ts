@@ -14,7 +14,6 @@ export type NoteColor =
 
 export interface Note {
   id: string;
-  userId: string;
   title: string;
   content: string;
   color: NoteColor;
@@ -29,7 +28,6 @@ export interface Note {
 
 export interface Label {
   id: string;
-  userId: string;
   name: string;
   color: NoteColor;
   emoji: string;

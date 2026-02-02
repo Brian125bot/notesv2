@@ -18,7 +18,6 @@ interface SyncState {
 }
 
 interface UseSyncOptions {
-  userId: string | undefined;
   onSyncStart?: () => void;
   onSyncComplete?: () => void;
   onSyncError?: (error: string) => void;
@@ -32,7 +31,6 @@ interface UseSyncOptions {
  * - Progress tracking
  */
 export function useSync({
-  userId,
   onSyncStart,
   onSyncComplete,
   onSyncError,
@@ -116,7 +114,7 @@ export function useSync({
 
   // Main sync function
   const performSync = useCallback(async (): Promise<boolean> => {
-    if (!userId || isSyncingRef.current) return false;
+    if (isSyncingRef.current) return false;
 
     isSyncingRef.current = true;
     setSyncState((prev) => ({ ...prev, isSyncing: true, error: null }));
@@ -200,7 +198,6 @@ export function useSync({
       await updatePendingCount();
     }
   }, [
-    userId,
     onSyncStart,
     onSyncComplete,
     onSyncError,
@@ -287,8 +284,6 @@ export function useSync({
 
   // Set up periodic sync
   useEffect(() => {
-    if (!userId) return;
-
     // Initial sync
     performSync();
 
@@ -304,7 +299,7 @@ export function useSync({
         clearInterval(intervalRef.current);
       }
     };
-  }, [userId, performSync]);
+  }, [performSync]);
 
   // Listen for online event
   useEffect(() => {
@@ -345,11 +340,9 @@ export function useSync({
 
   // Update pending count periodically
   useEffect(() => {
-    if (!userId) return;
-
     const interval = setInterval(updatePendingCount, 5000);
     return () => clearInterval(interval);
-  }, [userId, updatePendingCount]);
+  }, [updatePendingCount]);
 
   return {
     ...syncState,
@@ -362,11 +355,9 @@ export function useSync({
 /**
  * Hook for queueing sync actions
  */
-export function useSyncQueue(userId: string | undefined) {
+export function useSyncQueue() {
   const queueAction = useCallback(
     async (action: SyncAction): Promise<void> => {
-      if (!userId) return;
-
       await db.addToSyncQueue(action);
 
       // Trigger background sync if available
@@ -379,7 +370,7 @@ export function useSyncQueue(userId: string | undefined) {
         }
       }
     },
-    [userId]
+    []
   );
 
   return { queueAction };

@@ -20,6 +20,7 @@ interface SearchResult {
   color: string;
   isPinned: boolean;
   isArchived: boolean;
+  createdAt: string;
   updatedAt: string;
   titleHighlighted?: string;
   contentHighlighted?: string;

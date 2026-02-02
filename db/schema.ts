@@ -8,7 +8,6 @@ const tsvector = customType<{ data: string }>({
 
 export const notes = pgTable("notes", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
   title: text("title").notNull().default(""),
   content: text("content").notNull().default(""),
   color: text("color").notNull().default("white"),
@@ -23,7 +22,6 @@ export const notes = pgTable("notes", {
 
 export const labels = pgTable("labels", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
   name: text("name").notNull(),
   color: text("color").notNull().default("gray"),
   emoji: text("emoji").notNull().default("🏷️"),

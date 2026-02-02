@@ -14,6 +14,7 @@ interface SearchResult {
   color: string;
   isPinned: boolean;
   isArchived: boolean;
+  createdAt: string;
   updatedAt: string;
   titleHighlighted?: string;
   contentHighlighted?: string;
@@ -77,13 +78,12 @@ export function SearchResults({
               onClick={() =>
                 onNoteSelect({
                   id: result.id,
-                  userId: "",
                   title: result.title,
                   content: result.content,
                   color: result.color as any,
                   isPinned: result.isPinned,
                   isArchived: result.isArchived,
-                  createdAt: "",
+                  createdAt: result.createdAt,
                   updatedAt: result.updatedAt,
                 })
               }

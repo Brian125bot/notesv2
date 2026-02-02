@@ -15,7 +15,7 @@ Phase 2 has been successfully implemented! The notes app now has full real-time 
 
 **Features:**
 - ✅ Real-time push updates from server to all connected clients
-- ✅ Connection management (userId → connections[])
+- ✅ Connection management (global or guest-based)
 - ✅ Automatic reconnection with exponential backoff (max 10 attempts)
 - ✅ Heartbeat/ping every 30 seconds to keep connections alive
 - ✅ Event types: `note_created`, `note_updated`, `note_deleted`, `sync_complete`
@@ -177,12 +177,6 @@ Phase 3 will include:
 Make sure these are set:
 ```env
 DATABASE_URL=your_neon_database_url
-NEXT_PUBLIC_AUTH_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-GITHUB_CLIENT_ID=...
-GITHUB_CLIENT_SECRET=...
-BETTER_AUTH_SECRET=...
 ```
 
 Run the app:

@@ -1,30 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { labels, noteLabels } from "@/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { eq, desc, sql } from "drizzle-orm";
 
 /**
  * Labels API Routes
  * CRUD operations for note labels
  */
 
-// GET /api/labels - Get all labels for user
+// GET /api/labels - Get all labels
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const db = getDb();
 
     // Get labels with note counts
     const userLabels = await db
       .select({
         id: labels.id,
-        userId: labels.userId,
         name: labels.name,
         color: labels.color,
         emoji: labels.emoji,
@@ -35,7 +27,6 @@ export async function GET(req: NextRequest) {
       })
       .from(labels)
       .leftJoin(noteLabels, eq(labels.id, noteLabels.labelId))
-      .where(eq(labels.userId, session.user.id))
       .groupBy(labels.id)
       .orderBy(labels.sortOrder, desc(labels.createdAt));
 
@@ -49,11 +40,6 @@ export async function GET(req: NextRequest) {
 // POST /api/labels - Create new label
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { name, color, emoji, description, sortOrder } = body;
 
@@ -65,7 +51,6 @@ export async function POST(req: NextRequest) {
     const [label] = await db
       .insert(labels)
       .values({
-        userId: session.user.id,
         name: name.trim(),
         color: color || "gray",
         emoji: emoji || "🏷️",
@@ -84,11 +69,6 @@ export async function POST(req: NextRequest) {
 // PATCH /api/labels?id=xxx - Update label
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -109,7 +89,7 @@ export async function PATCH(req: NextRequest) {
     const [label] = await db
       .update(labels)
       .set(updateData)
-      .where(and(eq(labels.id, id), eq(labels.userId, session.user.id)))
+      .where(eq(labels.id, id))
       .returning();
 
     if (!label) {
@@ -126,11 +106,6 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/labels?id=xxx - Delete label
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -143,7 +118,7 @@ export async function DELETE(req: NextRequest) {
     // Delete label (junction records will cascade)
     const [label] = await db
       .delete(labels)
-      .where(and(eq(labels.id, id), eq(labels.userId, session.user.id)))
+      .where(eq(labels.id, id))
       .returning();
 
     if (!label) {

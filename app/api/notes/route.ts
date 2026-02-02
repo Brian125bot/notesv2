@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { notes } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import {
   broadcastNoteCreated,
   broadcastNoteUpdated,
@@ -16,14 +14,9 @@ import {
  * CRUD operations for notes with real-time broadcasting
  */
 
-// GET /api/notes - Get all notes for the user
+// GET /api/notes - Get all notes
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const includeArchived = searchParams.get("archived") === "true";
 
@@ -32,10 +25,7 @@ export async function GET(req: NextRequest) {
       .select()
       .from(notes)
       .where(
-        and(
-          eq(notes.userId, session.user.id),
-          includeArchived ? undefined : eq(notes.isArchived, false)
-        )
+        includeArchived ? undefined : eq(notes.isArchived, false)
       )
       .orderBy(desc(notes.updatedAt));
 
@@ -49,11 +39,6 @@ export async function GET(req: NextRequest) {
 // POST /api/notes - Create a new note
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { title, content, color, isPinned } = body;
 
@@ -61,7 +46,6 @@ export async function POST(req: NextRequest) {
     const [note] = await db
       .insert(notes)
       .values({
-        userId: session.user.id,
         title: title || "",
         content: content || "",
         color: color || "white",
@@ -70,9 +54,9 @@ export async function POST(req: NextRequest) {
       })
       .returning();
 
-    // Broadcast to user's other devices
-    broadcastNoteCreated(session.user.id, note);
-    broadcastSyncComplete(session.user.id, Date.now());
+    // Broadcast to other devices
+    broadcastNoteCreated("guest", note);
+    broadcastSyncComplete("guest", Date.now());
 
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
@@ -84,11 +68,6 @@ export async function POST(req: NextRequest) {
 // PATCH /api/notes - Update a note
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { id, title, content, color, isPinned, isArchived } = body;
 
@@ -107,16 +86,16 @@ export async function PATCH(req: NextRequest) {
     const [note] = await db
       .update(notes)
       .set(updateData)
-      .where(and(eq(notes.id, id), eq(notes.userId, session.user.id)))
+      .where(eq(notes.id, id))
       .returning();
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
     }
 
-    // Broadcast to user's other devices
-    broadcastNoteUpdated(session.user.id, note);
-    broadcastSyncComplete(session.user.id, Date.now());
+    // Broadcast to other devices
+    broadcastNoteUpdated("guest", note);
+    broadcastSyncComplete("guest", Date.now());
 
     return NextResponse.json(note);
   } catch (error) {
@@ -128,11 +107,6 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/notes - Delete a note
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -143,16 +117,16 @@ export async function DELETE(req: NextRequest) {
     const db = getDb();
     const [note] = await db
       .delete(notes)
-      .where(and(eq(notes.id, id), eq(notes.userId, session.user.id)))
+      .where(eq(notes.id, id))
       .returning();
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
     }
 
-    // Broadcast to user's other devices
-    broadcastNoteDeleted(session.user.id, id);
-    broadcastSyncComplete(session.user.id, Date.now());
+    // Broadcast to other devices
+    broadcastNoteDeleted("guest", id);
+    broadcastSyncComplete("guest", Date.now());
 
     return NextResponse.json({ success: true });
   } catch (error) {

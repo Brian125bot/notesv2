@@ -12,7 +12,6 @@ interface SSEMessage {
 }
 
 interface UseSSEOptions {
-  userId: string | undefined;
   onNoteCreated?: (note: Note) => void;
   onNoteUpdated?: (note: Note) => void;
   onNoteDeleted?: (noteId: string) => void;
@@ -24,7 +23,6 @@ interface UseSSEOptions {
  * Handles real-time updates from the server
  */
 export function useSSE({
-  userId,
   onNoteCreated,
   onNoteUpdated,
   onNoteDeleted,
@@ -145,7 +143,7 @@ export function useSSE({
 
   // Connect to SSE endpoint
   const connect = useCallback(() => {
-    if (!userId || eventSourceRef.current) return;
+    if (eventSourceRef.current) return;
 
     try {
       const eventSource = new EventSource("/api/sse");
@@ -193,7 +191,7 @@ export function useSSE({
     } catch (error) {
       console.error("Failed to connect SSE:", error);
     }
-  }, [userId, handleMessage]);
+  }, [handleMessage]);
 
   // Disconnect from SSE endpoint
   const disconnect = useCallback(() => {
@@ -210,21 +208,19 @@ export function useSSE({
     setIsConnected(false);
   }, []);
 
-  // Connect when userId changes
+  // Connect when mounted
   useEffect(() => {
-    if (userId) {
-      connect();
-    }
+    connect();
 
     return () => {
       disconnect();
     };
-  }, [userId, connect, disconnect]);
+  }, [connect, disconnect]);
 
   // Reconnect when coming back online
   useEffect(() => {
     const handleOnline = () => {
-      if (userId && !isConnected) {
+      if (!isConnected) {
         reconnectAttemptsRef.current = 0;
         connect();
       }
@@ -232,7 +228,7 @@ export function useSSE({
 
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [userId, isConnected, connect]);
+  }, [isConnected, connect]);
 
   return {
     isConnected,

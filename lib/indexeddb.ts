@@ -18,21 +18,24 @@ class NotesDatabase extends Dexie {
   constructor() {
     super("NotesDatabase");
     
-    this.version(1).stores({
-      notes: "id, userId, isPinned, isArchived, updatedAt, syncStatus, isDeleted",
-      labels: "id, userId, name, isDeleted",
+    this.version(2).stores({
+      notes: "id, isPinned, isArchived, updatedAt, syncStatus, isDeleted",
+      labels: "id, name, isDeleted",
       syncQueue: "id, createdAt",
       metadata: "key",
     });
   }
 
   // Note operations
-  async getNotes(userId: string, includeArchived = false): Promise<Note[]> {
-    let query = this.notes.where({ userId }).and((n) => !n.isDeleted);
+  async getNotes(includeArchived = false): Promise<Note[]> {
+    let query = this.notes.where("isDeleted").equals("false"); // Dexie boolean indices can be tricky, relying on filter
+    // actually, simpler:
+    let collection = this.notes.filter(n => !n.isDeleted);
+    
     if (!includeArchived) {
-      query = query.and((n) => !n.isArchived);
+      collection = collection.and(n => !n.isArchived);
     }
-    return query.reverse().sortBy("updatedAt");
+    return collection.reverse().sortBy("updatedAt");
   }
 
   async getNote(id: string): Promise<Note | undefined> {

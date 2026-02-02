@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/indexeddb";
 import type { Note, NoteColor, SyncAction } from "@/types";
 
-export function useNotes(userId: string | undefined) {
+export function useNotes() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
@@ -12,10 +12,8 @@ export function useNotes(userId: string | undefined) {
 
   // Load notes from IndexedDB
   const loadNotes = useCallback(async () => {
-    if (!userId) return;
-    
     try {
-      const userNotes = await db.getNotes(userId);
+      const userNotes = await db.getNotes();
       setNotes(userNotes);
       
       // Count pending sync items
@@ -26,7 +24,7 @@ export function useNotes(userId: string | undefined) {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -58,7 +56,6 @@ export function useNotes(userId: string | undefined) {
     
     const newNote: Note = {
       id: clientId,
-      userId: userId || "",
       title: data.title || "",
       content: data.content || "",
       color: data.color || "white",
@@ -86,7 +83,7 @@ export function useNotes(userId: string | undefined) {
     setPendingCount((prev) => prev + 1);
 
     return newNote;
-  }, [userId]);
+  }, []);
 
   // Update note
   const updateNote = useCallback(async (id: string, data: Partial<Note>): Promise<void> => {
