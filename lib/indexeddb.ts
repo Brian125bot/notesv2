@@ -28,8 +28,7 @@ class NotesDatabase extends Dexie {
 
   // Note operations
   async getNotes(includeArchived = false): Promise<Note[]> {
-    let query = this.notes.where("isDeleted").equals("false"); // Dexie boolean indices can be tricky, relying on filter
-    // actually, simpler:
+    // Dexie boolean indices can be tricky, relying on filter
     let collection = this.notes.filter(n => !n.isDeleted);
     
     if (!includeArchived) {
@@ -92,6 +91,10 @@ class NotesDatabase extends Dexie {
 
   async removeFromSyncQueue(id: string): Promise<void> {
     await this.syncQueue.delete(id);
+  }
+
+  async removeManyFromSyncQueue(ids: string[]): Promise<void> {
+    await this.syncQueue.bulkDelete(ids);
   }
 
   async updateSyncStatus(noteId: string, status: Note["syncStatus"]): Promise<void> {
